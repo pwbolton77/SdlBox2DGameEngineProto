@@ -16,12 +16,9 @@
 // Complex shapes tutorial (for next iteration): https://www.youtube.com/watch?v=V95dzuDw0Jg&ab_channel=TheCodingTrain
 // Making Box2D Circles (for some other iteration): https://stackoverflow.com/questions/10264012/how-to-create-circles-in-box2d
 
-#include "ContactListener.h"  // #1 We need custom class for collsion callbacks
-
-#include <stdio.h>
-
-#include <string>
-#include <iostream>
+#include "ContactListener.h"  // #1 We need custom class for collision callbacks
+#include "bolt_utilities.h"
+#include "Engine.h"
 
 #include <SDL.h>
 #include <Box2D/Box2D.h>
@@ -29,29 +26,20 @@
 #include <GL/freeglut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-
-#include <GL/gl.h>
 #include <GL/glut.h>
+
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
+#include <string>
+#include <iostream>
+#include <memory>
+
 
 #define dbg(x) std::cout << #x << ": " << (x) << "   ";
 #define dbgln(x) std::cout << #x << ": " << (x) << std::endl;
 
-// const int SCREEN_WIDTH = 640;
-// const int SCREEN_HEIGHT = 480;
-
-// "1280x1024"); //the settings for fullscreen mode
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 1024;
-
-const int SCREEN_FRAMES_PER_SECOND = 30;
-const float MetersToPixels = 40.0f;		// Meters to pixels
-const float PixelsToMeters = 1.0f / MetersToPixels;	// Pixels to meters 
-
-ContactListener contact_listener;   // #1 Only need ONE instance of the contact listener to receive all collsion callbacks
-b2World* world;                     // The Box2D world of objects
-
+#undef TEST_GET_MODEL_VIEW_MATRIX // Define this to test and print model view matrix after some simple manipulation 
 
 // #1 The tutorial used void pointers to "user data" with user data being int's.  So we need a couple ints to point to, where
 //    the value of the int indicates our custom type - i.e. it is either a "static" box (the platform where boxes land),
@@ -59,10 +47,26 @@ b2World* world;                     // The Box2D world of objects
 const int StaticType = 0;     // We make either static boxes
 const int DynamicType = 1;    // or dynamic boxes
 
+#ifdef OLD_ENGINE
+// const int SCREEN_WIDTH = 640;
+// const int SCREEN_HEIGHT = 480;
+
+// "1280x1024"); //the settings for full screen mode
+const int SCREEN_WIDTH = 1280;
+const int SCREEN_HEIGHT = 1024;
+
+const int SCREEN_FRAMES_PER_SECOND = 60;
+const float MetersToPixels = 40.0f;		// Meters to pixels
+const float PixelsToMeters = 1.0f / MetersToPixels;	// Pixels to meters 
+
+ContactListener contact_listener;   // #1 Only need ONE instance of the contact listener to receive all collision callbacks
+b2World* world;                     // The Box2D world of objects
+
+
 // Purpose: Add a new rectangle to the (Box2D) world of object.
 //   dynamic_object: 
 //       - if true the object bounce around in the physical world.  
-//       - If false the object is "static" and acts like a ridgid, fixed platform (that probably never moves in the scene).
+//       - If false the object is "static" and acts like a rigid, fixed platform (that probably never moves in the scene).
 b2Body* addRectToWorld(float x, float y, float width, float height, bool dynamic_object = true)
 {
    b2BodyDef bodydef;
@@ -71,7 +75,7 @@ b2Body* addRectToWorld(float x, float y, float width, float height, bool dynamic
 
    b2Body* body = world->CreateBody(&bodydef);
 
-   b2PolygonShape shape;   // Polygons seem to be limited to 8 verticies
+   b2PolygonShape shape;   // Polygons seem to be limited to 8 vertices
    shape.SetAsBox(PixelsToMeters * width / 2, PixelsToMeters * height / 2);
 
    b2FixtureDef fixture_def;
@@ -81,7 +85,7 @@ b2Body* addRectToWorld(float x, float y, float width, float height, bool dynamic
    body->CreateFixture(&fixture_def);
 
    auto& user_data = body->GetUserData();
-   assert(sizeof(uintptr_t) == sizeof(&DynamicType)); // Make sure that we can save a pointerto an int in a uintptr_t type.
+   assert(sizeof(uintptr_t) == sizeof(&DynamicType)); // Make sure that we can save a pointer to an int in a uintptr_t type.
 
    // #1 When a collision happens we need to know the type of the box/body, so save the type via a user data pointer
    if (dynamic_object)
@@ -134,13 +138,13 @@ void render()
 // Purpose: Initialize the Box2D world and create/place the static objects.
 void initBox2DWorld()
 {
-   world = new b2World(b2Vec2(0.0f, 0.0f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
+   // world = new b2World(b2Vec2(0.0f, 0.0f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
+   world = new b2World(b2Vec2(0.0f, 9.8f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
 
    world->SetContactListener(&contact_listener);
 
    // Add a static platform where boxes will land and stop.
-   // addRectToWorld(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 30, false /*not dynamic, so static*/);
-   addRectToWorld(50, 100, 30, 30, false /*not dynamic, so static*/);  // @@@ Temp
+   addRectToWorld(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 30, false /*not dynamic, so static*/);
 }
 
 void reshapeOrtho (int w, int h) {
@@ -151,49 +155,11 @@ void reshapeOrtho (int w, int h) {
    // gluPerspective(60, (GLfloat)w / (GLfloat)h, 1.0, 100.0); //set the perspective (angle of sight, width, height, , depth)
 
    glOrtho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, 1.0, -1.0);
+   // TODO:  
+   //    - @@ This will flip screen coord so origin is in bottom left: glOrtho(0.0, SCREEN_WIDTH, 0.0, SCREEN_HEIGHT, 1.0, -1.0);  // @@@ Temp
+   //    - @@ But doing so means we need to translate mouse hit coord to world coords a little differently
+   //    - @@ And gravity will have to be reversed 
    glMatrixMode(GL_MODELVIEW); //set the matrix back to model
-
-}
-
-// Purpose:  Intialize the OpenGL graphics for what we want to use for this game/demo
-bool initOurOpenGLOptions()
-{
-   // Initialize Projection Matrix
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
-
-   // glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); //Set the viewport
-   glOrtho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, 1.0, -1.0);
-
-   glutGameModeString("1280x1024"); //the settings for fullscreen mode
-   glutEnterGameMode(); //set glut to fullscreen using the settings in the line above
-   glutFullScreen();
-
-
-   // Initialize Modelview Matrix
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
-
-   // Initialize clear color (i.e. clear the hidden buffer to black when we render the next display buffer)
-   glClearColor(0.f, 0.f, 0.f, 1.f);   // RGB to black, with an Alpha of 1.0 so non-transparent
-
-   //Enable texturing
-   glEnable(GL_TEXTURE_2D);   // Probably not needed
-
-   //Set blending
-   glEnable(GL_BLEND);
-   glDisable(GL_DEPTH_TEST);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-   //Check for error
-   GLenum error = glGetError();
-   if (error != GL_NO_ERROR)
-   {
-      printf("Error initializing OpenGL! %s\n", gluErrorString(error));
-      return false;
-   }
-
-   return true;
 }
 
 // Purpose: Update the position of objects/bodies in the world
@@ -203,14 +169,14 @@ void update()
       5 /*magic number*/, 5 /*magic number*/);  // I guess these numbers affect accuracy and overhead of collision detection and position calculations.
 }
 
-// Pupose: Run the main render loop
+// Purpose: Run the main render loop
 void runMainLoop(int val)
 {
    update();   // Update the position of objects/bodies in the world
 
    render();   // Render the next display/frame (and swap to the newly drawn frame)
 
-   // Setup a timer (in millseconds), then call the runMainLoop() function again. 
+   // Setup a timer (in milliseconds), then call the runMainLoop() function again. 
    //  val - is just a user provided value so the user can (potentially) identify the reason a timer when off
    glutTimerFunc(1000 / SCREEN_FRAMES_PER_SECOND, runMainLoop, val); //Run frame one more time
 }
@@ -224,7 +190,7 @@ void mouseEventCallback(int button, int state, int screen_x, int screen_y)
    }
 
    // Other callbacks include
-   //glutIdleFunc(amimate);  // when there is nothing else to do
+   //glutIdleFunc(animate);  // when there is nothing else to do
    //glutKeyboardFunc(something);    // ?
    //glutKeyboardUpFunc(keyboard_up); // when a key goes up 
    //glutPassiveMotionFunc(look);// when the mouse moved
@@ -235,10 +201,45 @@ void mouseEventCallback(int button, int state, int screen_x, int screen_y)
 void keyboardEventCallback(unsigned char key, int where_mouse_is_x, int where_mouse_is_y)
 {
    dbg(__func__); dbg(where_mouse_is_x); dbg(where_mouse_is_y); dbgln(key);   // Debug: Just print out the key
+
+   if (key == 27)
+   {
+      glutLeaveGameMode(); //set the resolution how it was
+      exit(0); //quit the program
+   }
 }
 
+// Purpose: Test and print model view matrix after some simple manipulation 
+void testGetModelViewMatrix()
+{
+   glPushMatrix();
+   {
+      GLfloat model_view_matrix[16];
 
-int main(int argc, char* args[])
+      glLoadIdentity(); std::cout << "Loaded identity" << std::endl; // undo changes to GL_MODELVIEW_MATRIX
+      glGetFloatv(GL_MODELVIEW_MATRIX, model_view_matrix);
+      std::cout << "GL_MODELVIEW_MATRIX after load identity: " << bvec::printVec(model_view_matrix) << std::endl;
+      std::cout << "GL_MODELVIEW_MATRIX after load identity: " << bvec::printMatrixAsLines(model_view_matrix) << std::endl;
+
+      glLoadIdentity(); std::cout << "Loaded identity" << std::endl; // undo changes to GL_MODELVIEW_MATRIX
+      float x = 3, y = 2;
+      glTranslatef(x, y, 0.0f);
+      glGetFloatv(GL_MODELVIEW_MATRIX, model_view_matrix);
+      std::cout << "GL_MODELVIEW_MATRIX after translate (" << x << ", " << y << "): " << bvec::printVec(model_view_matrix) << std::endl;
+      std::cout << "GL_MODELVIEW_MATRIX after translate (" << x << ", " << y << "): " << bvec::printMatrixAsLines(model_view_matrix) << std::endl;
+
+      glLoadIdentity(); std::cout << "Loaded identity" << std::endl; // undo changes to GL_MODELVIEW_MATRIX
+      float angle_degrees = 30;
+      float angle_radians = bvec::degreesToRadians(angle_degrees);
+      glRotatef(angle_radians, 0.0f, 0.0f, 1.0f);  // Rotate around Z axis
+      glGetFloatv(GL_MODELVIEW_MATRIX, model_view_matrix);
+      std::cout << "GL_MODELVIEW_MATRIX after rotate angle of " << angle_degrees << ": " << bvec::printVec(model_view_matrix) << std::endl;
+      std::cout << "GL_MODELVIEW_MATRIX after rotate angle of " << angle_degrees << ": " << bvec::printMatrixAsLines(model_view_matrix) << std::endl;
+   }
+   glPopMatrix();
+}
+
+int oldEngineCode()
 {
    //// Init FreeGlut
    //glutInit(&argc, args); //Initialize FreeGLUT
@@ -255,30 +256,38 @@ int main(int argc, char* args[])
    //   printf("Unable to initialize graphics library!\n");
    //   exit(1);
    //}
-
-   glutInit(&argc, args);
+   int dummy_args = 0;
+   glutInit(&dummy_args, nullptr); // OR you can pass in command line arguments via "glutInit(&argc, args);"
    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH); //set the display to Double buffer, with depth
-      // glutGameModeString("1024x768:32@75"); //the settings for fullscreen mode
-   glutGameModeString("1280x1024"); //the settings for fullscreen mode
-   glutEnterGameMode(); //set glut to fullscreen using the settings in the line above
+                                                  // glutGameModeString("1024x768:32@75"); //the settings for full screen mode
+   glutGameModeString("1280x1024"); //the settings for full screen mode
+   glutEnterGameMode(); //set glut to full screen using the settings in the line above
 
-   // Initialize Modelview Matrix
+                        // Initialize Modelview Matrix
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
 
    // Initialize clear color (i.e. clear the hidden buffer to black when we render the next display buffer)
    glClearColor(0.f, 0.f, 0.f, 1.f);   // RGB to black, with an Alpha of 1.0 so non-transparent
 
-   //Enable texturing
+                                       //Enable texturing
    glEnable(GL_TEXTURE_2D);   // Probably not needed
 
-   //Set blending
+                              //Set blending
    glEnable(GL_BLEND);
    glDisable(GL_DEPTH_TEST);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-   glutDisplayFunc(render); //use the display function to draw everything
-   glutIdleFunc(render); //update any variables in display, display can be changed to anyhing, as long as you move the variables to be updated, in this case, angle++;
+   // Try to enable smoothing (does not work well)
+   // glEnable(GL_LINE_SMOOTH);
+   // glEnable(GL_POLYGON_SMOOTH);
+   // glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+   // glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+
+   auto render_lamda = []() { render();  };
+
+   glutDisplayFunc(render_lamda); //use the display function to draw everything
+   glutIdleFunc(render_lamda); //update any variables in display, display can be changed to anything, as long as you move the variables to be updated, in this case, angle++;
    glutReshapeFunc(reshapeOrtho); //reshape the window accordingly
 
    glutMouseFunc(mouseEventCallback);
@@ -289,17 +298,21 @@ int main(int argc, char* args[])
    if (error != GL_NO_ERROR)
    {
       printf("Error initializing OpenGL! %s\n", gluErrorString(error));
-      exit (1);
+      exit(1);
    }
 
-   // Init Box2D world and static object in the world
+#ifdef TEST_GET_MODEL_VIEW_MATRIX
+   testGetModelViewMatrix();  // Test and print model view matrix after some simple manipulation 
+#endif
+
+                              // Init Box2D world and static object in the world
    initBox2DWorld();
 
    // glutDisplayFunc(render);
    // glutReshapeFunc(reshapeOrtho); //reshape the window accordingly
 
 
-   // Setup a timer (in millseconds), then call the runMainLoop() function. 
+   // Setup a timer (in milliseconds), then call the runMainLoop() function. 
    //  val - is just a user provided value so the user can (potentially) identify the reason a timer when off
    glutTimerFunc(1000 / SCREEN_FRAMES_PER_SECOND, runMainLoop, 0 /*val*/);
 
@@ -310,8 +323,59 @@ int main(int argc, char* args[])
    // Run the world.
    glutMainLoop(); //Start GLUT main loop
 
+   glutLeaveGameMode(); //set the resolution how it was
    SDL_Quit(); //Quit/cleanup SDL subsystems
 
    return 0;   // returning zero indicates "no errors" - i.e. we did not crash
 }
 
+#endif
+
+int main(int argc, char* args[])
+{
+   //// Create and configure the engine
+   //using namespace bolt::game_engine;
+   //std::unique_ptr<Engine> engine = std::make_unique<Engine>();
+   //auto config_engine_result = engine->configure(IConfigEngine::ScreenMode::FullScreen);
+
+   //if (config_engine_result.has_error())
+   //{
+   //   std::cerr << "Failed engine configuration: " << config_engine_result.error() << std::endl;;
+   //   exit(1);
+   //}
+
+   namespace ben = bolt::game_engine;
+   using Eng = ben::Engine;
+
+   const bool use_engine = true;
+   if (use_engine)
+   {
+      int error_code{0}; // Return a non-zero error code from main() to indicate an error
+
+      using SceenMode = Eng::ScreenMode;
+      auto startup_result = Eng::configureEngine(SceenMode::FullScreen);
+
+      if (startup_result)
+      {
+         std::cout << std::endl;
+         std::cout << "Instructions:" << std::endl;
+         std::cout << " Click mouse in window to create a block that falls" << std::endl;
+
+         startup_result = Eng::startEngine ();
+      }
+
+      if (!startup_result)
+      {
+         std::cerr << "Game engine failed: " << startup_result.error() << std::endl;
+         error_code = 1;   // Return a (non-zero) error code from main, indicating an error
+      }
+      return error_code;
+   }
+   else
+   {
+#ifdef OLD_ENGINE
+      return oldEngineCode();
+#endif
+      return 0;
+   }
+}

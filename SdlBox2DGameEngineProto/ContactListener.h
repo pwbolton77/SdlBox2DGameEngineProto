@@ -19,7 +19,7 @@ class ContactListener : public b2ContactListener
       auto body_b = contact->GetFixtureB()->GetBody();
 
       // #1
-      // !! Caution: Dont delete bodies (or anything) here.  Set a flag and do it elsewhere.
+      // !! Caution: Don't delete bodies (or anything) here.  Set a flag and do it elsewhere.
 
       // Get the type of body A
       const auto& a_user_data = body_a->GetUserData();
@@ -27,7 +27,7 @@ class ContactListener : public b2ContactListener
       auto a_type = (a_user_int_ptr != nullptr) ? *a_user_int_ptr : StaticType;
 
       if (a_type == DynamicType)
-         std::cout << "Detected collsion: Dynamic body: Maybe delete body A based on type" << std::endl;
+         std::cout << "Detected collision: Dynamic body: Maybe delete body A based on type" << std::endl;
 
       // Get the type of body A
       const auto& b_user_data = body_b->GetUserData();
@@ -35,7 +35,7 @@ class ContactListener : public b2ContactListener
       auto b_type = (b_user_int_ptr != nullptr) ? *b_user_int_ptr : StaticType;
 
       if (b_type == DynamicType)
-         std::cout << "Detected collsion: Dynamic body: Maybe delete body B based on type" << std::endl;
+         std::cout << "Detected collision: Dynamic body: Maybe delete body B based on type" << std::endl;
    };
 
    /// Called when two fixtures cease to touch.

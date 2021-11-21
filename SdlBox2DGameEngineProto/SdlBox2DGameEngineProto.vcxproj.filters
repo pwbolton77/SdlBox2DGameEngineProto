@@ -13,15 +13,39 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\BoltEngine">
+      <UniqueIdentifier>{5b695176-f7f7-49e5-b045-49f9d4160317}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BoltEngine">
+      <UniqueIdentifier>{3a1b5c52-df3f-47a8-9548-d47c4d8a7a98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BoltUtilities">
+      <UniqueIdentifier>{01deedbb-14b1-4e67-b7e6-bbb28ceaa202}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ContactListener.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Header Files\BoltEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="vector_math.h">
+      <Filter>Header Files\BoltUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="expected.h">
+      <Filter>Header Files\BoltUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="bolt_utilities.h">
+      <Filter>Header Files\BoltUtilities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
