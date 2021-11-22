@@ -20,7 +20,15 @@ namespace bolt::game_engine
       // Get the result of configuration
       static Result<void> getConfigureResult() { return config_result; };
 
+      // Convert screen coordinates to world coordinates
+      static std::pair<float, float> screenToWorld(const float& x_screen, const float& y_screen) 
+         { return {x_screen, static_cast<float>(screen_height) - y_screen}; };
+
    private:
+      // static std::uint16_t screen_width;
+      // static std::uint16_t screen_height;
+      static float screen_width;
+      static float screen_height;
       // Configure the graphics 
       static Result<void> configureGraphics(ScreenMode screen_mode);
 

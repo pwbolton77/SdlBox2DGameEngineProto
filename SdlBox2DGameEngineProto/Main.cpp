@@ -36,7 +36,8 @@ int main(int argc, char* args[])
       // Provide some instructions to the player 
       std::cout << std::endl;
       std::cout << "Instructions:" << std::endl;
-      std::cout << " Click mouse in window to create a block that falls" << std::endl;
+      std::cout << " - Click mouse in window to create a block that falls." << std::endl;
+      std::cout << " - Press ESC to exit." << std::endl;
 
       //// Start running the engine
       // !! NOTE: This will not return until the engine exists

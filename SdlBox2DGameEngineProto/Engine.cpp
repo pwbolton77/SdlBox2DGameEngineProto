@@ -35,12 +35,8 @@ using namespace std::string_literals;
 
 #undef TEST_GET_MODEL_VIEW_MATRIX // Define this to test and print model view matrix after some simple manipulation 
 
-// const int SCREEN_WIDTH = 640;
-// const int SCREEN_HEIGHT = 480;
-
-// "1280x1024"); //the settings for full screen mode
-static const int SCREEN_WIDTH = 1280;
-static const int SCREEN_HEIGHT = 1024;
+// const int screen_width = 640;
+// const int screen_height = 480;
 
 static const int SCREEN_FRAMES_PER_SECOND = 60;
 static const float MetersToPixels = 40.0f;		// Meters to pixels
@@ -49,6 +45,8 @@ static const float PixelsToMeters = 1.0f / MetersToPixels;	// Pixels to meters
 
 namespace bolt::game_engine
 {
+   float Engine::screen_width = 1280;
+   float Engine::screen_height = 1024;
 
    ContactListener Engine::contact_listener{};   // #1 Only need ONE instance of the contact listener to receive all collision callbacks
    b2World* Engine::world{nullptr};                     // The Box2D world of objects
@@ -155,10 +153,10 @@ namespace bolt::game_engine
    //   dynamic_object: 
    //       - if true the object bounce around in the physical world.  
    //       - If false the object is "static" and acts like a rigid, fixed platform (that probably never moves in the scene).
-   b2Body* Engine::addRectToWorld(float x, float y, float width, float height, bool dynamic_object = true)
+   b2Body* Engine::addRectToWorld(float x_center, float y_center, float width, float height, bool dynamic_object = true)
    {
       b2BodyDef bodydef;
-      bodydef.position.Set(x * PixelsToMeters, y * PixelsToMeters);
+      bodydef.position.Set(x_center * PixelsToMeters, y_center * PixelsToMeters);
       bodydef.type = (dynamic_object) ? b2_dynamicBody : b2_staticBody;
 
       b2Body* body = world->CreateBody(&bodydef);
@@ -226,13 +224,13 @@ namespace bolt::game_engine
    // Purpose: Initialize the Box2D world and create/place the static objects.
    void Engine::initBox2DWorld()
    {
-      // world = new b2World(b2Vec2(0.0f, 0.0f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
-      world = new b2World(b2Vec2(0.0f, 9.8f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
+      // world = new b2World(b2Vec2(0.0f, 0.0f)); // 0, 0 to removed all gravity: Was (0.0f, 9.81f) for gravity
+      world = new b2World(b2Vec2(0.0f, -9.8f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
 
       world->SetContactListener(&contact_listener);
 
       // Add a static platform where boxes will land and stop.
-      addRectToWorld(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 30, false /*not dynamic, so static*/);
+      addRectToWorld(screen_width / 2, 50, screen_width, 30, false /*not dynamic, so static*/);
    }
 
    // Purpose: Sets up an orthographic view.  
@@ -243,11 +241,8 @@ namespace bolt::game_engine
 
       glLoadIdentity();
 
-      glOrtho(0.0, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0, 1.0, -1.0);
-      // TODO:  
-      //    - @@ This will flip screen coord so origin is in bottom left: glOrtho(0.0, SCREEN_WIDTH, 0.0, SCREEN_HEIGHT, 1.0, -1.0);  // @@@ Temp
-      //    - @@ But doing so means we need to translate mouse hit coord to world coords a little differently
-      //    - @@ And gravity will have to be reversed 
+      glOrtho(0.0, screen_width, 0.0, screen_height, 1.0, -1.0);
+
       glMatrixMode(GL_MODELVIEW); //set the matrix back to model
    }
 
@@ -275,7 +270,8 @@ namespace bolt::game_engine
    {
       if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
       {
-         addRectToWorld((float)screen_x, (float)screen_y, 20 /*width*/, 20 /*height*/, true);
+         auto [world_mouse_x, world_mouse_y] = screenToWorld((float) screen_x, (float) screen_y);
+         addRectToWorld(world_mouse_x, world_mouse_y, 20 /*rectangle width*/, 20 /*rectangle height*/, true);
       }
 
       // Other callbacks include
@@ -290,6 +286,8 @@ namespace bolt::game_engine
    void Engine::keyboardEventCallback(unsigned char key, int where_mouse_is_x, int where_mouse_is_y)
    {
       dbg(__func__); dbg(where_mouse_is_x); dbg(where_mouse_is_y); dbgln(key);   // Debug: Just print out the key
+      auto [world_mouse_x, world_mouse_y] = screenToWorld((float) where_mouse_is_x, (float) where_mouse_is_y);
+      dbg(__func__); dbg(world_mouse_x); dbg(world_mouse_y); dbgln(key);   // Debug: Just print out the key
 
       if (key == 27)
       {
