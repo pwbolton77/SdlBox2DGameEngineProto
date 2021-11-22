@@ -33,9 +33,6 @@
 
 using namespace std::string_literals;
 
-#define dbg(x) std::cout << #x << ": " << (x) << "   "
-#define dbgln(x) std::cout << #x << ": " << (x) << std::endl
-
 #undef TEST_GET_MODEL_VIEW_MATRIX // Define this to test and print model view matrix after some simple manipulation 
 
 // const int SCREEN_WIDTH = 640;
@@ -137,7 +134,7 @@ namespace bolt::game_engine
    }
 
    // Purpose: Start running the game engine 
-   Result<void> Engine::startEngine()
+   Result<void> Engine::runEngine()
    {
       Result<void> result; // Initialize to non-error 
 
@@ -300,8 +297,5 @@ namespace bolt::game_engine
          exit(0); //quit the program
       }
    }
-
-
-   // @@@@@@@@@@@@@@@@@@@@@
 
 } // End namespace bolt::engine

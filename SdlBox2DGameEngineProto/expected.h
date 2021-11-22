@@ -1,27 +1,7 @@
 #pragma once
-
-// Interface is same as proposal at: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r3.pdf
-// Also see example at: https://github.com/TartanLlama/expected/blob/master/README.md
-
-/*
-expected<int, errc> safe_divide(int i, int j)
-{
-   if (j == 0) return unexpected(arithmetic_errc::divide_by_zero);
-   if (i == INT_MIN && j == -1) return unexpected(arithmetic_errc::integer_divide_overflows);
-   if (i % j != 0) return unexpected(arithmetic_errc::not_integer_division);
-   else return i / j;
-}
-
-expected<double, errc> f1(double i, double j, double k)
-{
-   auto q = safe_divide(j, k);
-   if (q) return i + *q;
-   else return q;
-}
-*/
-
-
-///
+// NOTE: pwb:  See "Interface Usage Comments" section before for tips on how to use
+//
+//// Author's comments follow ...
 // expected - An implementation of std::expected with extensions
 // Written in 2017 by Simon Brand (simonrbrand@gmail.com, @TartanLlama)
 //
@@ -35,6 +15,29 @@ expected<double, errc> f1(double i, double j, double k)
 // along with this software. If not, see
 // <http://creativecommons.org/publicdomain/zero/1.0/>.
 ///
+
+//// Interface Usage Comments - pwb ////
+// Interface is same as proposal at: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0323r3.pdf
+// Also see example at: https://github.com/TartanLlama/expected/blob/master/README.md
+//
+// To initialize to an error value ... 
+//       expected<int, std::string> my_result { unexpected(std::string("Some error.")) };
+//
+//expected<int, errc> safe_divide(int i, int j)
+//{
+//   if (j == 0) return unexpected(arithmetic_errc::divide_by_zero);
+//   if (i == INT_MIN && j == -1) return unexpected(arithmetic_errc::integer_divide_overflows);
+//   if (i % j != 0) return unexpected(arithmetic_errc::not_integer_division);
+//   else return i / j;
+//}
+//
+//expected<double, errc> f1(double i, double j, double k)
+//{
+//   auto q = safe_divide(j, k);
+//   if (q) return i + *q;
+//   else return q;
+//}
+
 
 #ifndef TL_EXPECTED_HPP
 #define TL_EXPECTED_HPP
@@ -1937,7 +1940,7 @@ namespace tl {
       template <class U = T,
          detail::enable_if_t<!std::is_void<U>::value>* = nullptr>
          constexpr const U&& operator*() const&& {
-         return std::move(val());
+         return std::move(val());///////////////
       }
       template <class U = T,
          detail::enable_if_t<!std::is_void<U>::value>* = nullptr>

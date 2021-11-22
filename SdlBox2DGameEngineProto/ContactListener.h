@@ -1,13 +1,15 @@
 #pragma once
-
+// Purpose: ContactListener is derived from a Box2D b2ContactListener to callbacks on collisions from the Box2D "world" object.
+//
 #include <Box2D/Box2D.h>
 
 #include <iostream>
 
-extern const int StaticType;
-extern const int DynamicType;
+extern const int StaticType;  // @@@ TODO: Need to remove
+extern const int DynamicType; // @@@ TODO: Need to remove
 
-// #1 Need to make a derived class of the b2ContactListener to get callbacks on collisions
+// ContactListener is derived from a Box2D b2ContactListener to callbacks on collisions from the Box2D "world" object.
+//    #1 Need to make a derived class of the b2ContactListener to get callbacks on collisions
 class ContactListener : public b2ContactListener
 {
    /// Called when two fixtures begin to touch.

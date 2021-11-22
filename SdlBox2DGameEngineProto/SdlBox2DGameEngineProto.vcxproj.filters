@@ -28,13 +28,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\BoltEngine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ContactListener.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Engine.h">
       <Filter>Header Files\BoltEngine</Filter>
     </ClInclude>
@@ -46,6 +43,9 @@
     </ClInclude>
     <ClInclude Include="bolt_utilities.h">
       <Filter>Header Files\BoltUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="ContactListener.h">
+      <Filter>Header Files\BoltEngine</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

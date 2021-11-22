@@ -1,10 +1,12 @@
 #pragma once
-
+// Purpose: Vector math functions compatible with OpenGL vectors and matrices.
+//
+//    Converted from work here: https://github.com/datenwolf/linmath.h/blob/master/linmath.h
+//
 #include <sstream>
 #include <cmath>
 #include <numbers>
 
-// Converted from work here: https://github.com/datenwolf/linmath.h/blob/master/linmath.h
 namespace bolt::vector_math
 {
    template <typename T>
