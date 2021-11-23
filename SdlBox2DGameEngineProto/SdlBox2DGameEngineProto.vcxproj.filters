@@ -35,17 +35,26 @@
     <ClInclude Include="Engine.h">
       <Filter>Header Files\BoltEngine</Filter>
     </ClInclude>
-    <ClInclude Include="vector_math.h">
-      <Filter>Header Files\BoltUtilities</Filter>
-    </ClInclude>
     <ClInclude Include="expected.h">
       <Filter>Header Files\BoltUtilities</Filter>
     </ClInclude>
-    <ClInclude Include="bolt_utilities.h">
+    <ClInclude Include="bolt_util_debug_macros.h">
       <Filter>Header Files\BoltUtilities</Filter>
     </ClInclude>
     <ClInclude Include="ContactListener.h">
       <Filter>Header Files\BoltEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="bolt_buf.h">
+      <Filter>Header Files\BoltUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="bolt_buf_result.h">
+      <Filter>Header Files\BoltUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="bolt_buf_matrix.h">
+      <Filter>Header Files\BoltUtilities</Filter>
+    </ClInclude>
+    <ClInclude Include="bolt_buf_matrix_print.h">
+      <Filter>Header Files\BoltUtilities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

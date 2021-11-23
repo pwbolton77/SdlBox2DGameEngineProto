@@ -9,7 +9,7 @@
 // Making Box2D Circles (for some other iteration): https://stackoverflow.com/questions/10264012/how-to-create-circles-in-box2d
 
 #include "ContactListener.h"  // #1 We need custom class for collision callbacks
-#include "bolt_utilities.h"
+#include "bolt_buf.h"
 #include "Engine.h"
 
 #include <SDL.h>
@@ -31,6 +31,8 @@
 #include <string>
 #include <string_view>
 
+#include "bolt_util_debug_macros.h" // Should be last include and ONLY in *.cpp files
+
 using namespace std::string_literals;
 
 #undef TEST_GET_MODEL_VIEW_MATRIX // Define this to test and print model view matrix after some simple manipulation 
@@ -47,6 +49,7 @@ namespace bolt::game_engine
 {
    float Engine::screen_width = 1280;
    float Engine::screen_height = 1024;
+   using namespace buf;
 
    ContactListener Engine::contact_listener{};   // #1 Only need ONE instance of the contact listener to receive all collision callbacks
    b2World* Engine::world{nullptr};                     // The Box2D world of objects

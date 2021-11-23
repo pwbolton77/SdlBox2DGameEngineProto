@@ -1,7 +1,7 @@
 #pragma once
 // Purpose: The 2D game engine.  NOTE: All static function/data members (need to deal with Glut/OpenGL framework and callbacks)! 
 
-#include "bolt_utilities.h"
+#include "bolt_buf.h"
 #include "ContactListener.h"
 
 #include <Box2D/Box2D.h>
@@ -14,11 +14,11 @@ namespace bolt::game_engine
       enum class ScreenMode { FullScreen, NonFullScreen };
 
       // Configure the engine before starting it
-      static Result<void> configureEngine(ScreenMode screen_mode = ScreenMode::FullScreen);
+      static buf::Result<void> configureEngine(ScreenMode screen_mode = ScreenMode::FullScreen);
       // Start running the game engine 
-      static Result<void> runEngine();
+      static buf::Result<void> runEngine();
       // Get the result of configuration
-      static Result<void> getConfigureResult() { return config_result; };
+      static buf::Result<void> getConfigureResult() { return config_result; };
 
       // Convert screen coordinates to world coordinates
       static std::pair<float, float> screenToWorld(const float& x_screen, const float& y_screen) 
@@ -30,7 +30,7 @@ namespace bolt::game_engine
       static float screen_width;
       static float screen_height;
       // Configure the graphics 
-      static Result<void> configureGraphics(ScreenMode screen_mode);
+      static buf::Result<void> configureGraphics(ScreenMode screen_mode);
 
       // Add a new rectangle to the (Box2D) world of object.
       static b2Body* addRectToWorld(float x, float y, float width, float height, bool dynamic_object);
@@ -64,7 +64,7 @@ namespace bolt::game_engine
       static b2World* world;                     // The Box2D world of objects
 
       // Record the results of a configuration attempt. Contains an error string if not (successfully) configured.
-      static Result<void> config_result;
+      static buf::Result<void> config_result;
    };
 } // End namespace bolt::engine
 

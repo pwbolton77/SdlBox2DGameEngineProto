@@ -12,11 +12,14 @@
 
 #include "Engine.h"
 
+#include "bolt_util_debug_macros.h" // Should be last include and ONLY in *.cpp files
+
 // #1 The tutorial used void pointers to "user data" with user data being int's.  So we need a couple ints to point to, where
 //    the value of the int indicates our custom type - i.e. it is either a "static" box (the platform where boxes land),
 //    or it is a "dynamic" box that we may want to delete.
 const int StaticType = 0;     // We make either static boxes
 const int DynamicType = 1;    // or dynamic boxes
+
 
 // Purpose: The program's main()
 int main(int argc, char* args[])

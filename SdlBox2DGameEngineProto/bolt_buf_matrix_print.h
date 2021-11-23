@@ -1,32 +1,15 @@
 #pragma once
-// Purpose: Vector math functions compatible with OpenGL vectors and matrices.
-//
-//    Converted from work here: https://github.com/datenwolf/linmath.h/blob/master/linmath.h
-//
+
+#include "bolt_buf_matrix.h"
+
+#include <string>
+#include <ostream>
 #include <sstream>
-#include <cmath>
-#include <numbers>
+#include <cassert>
 
-namespace bolt::vector_math
+// Namespace for buf (Bolt Utilities Functionality)
+namespace buf::matrix_print
 {
-   template <typename T>
-   T radiansToDegrees(T radians) { return (radians * 180 / std::numbers::pi_v<T>); }
-
-   template <typename T>
-   T degreesToRadians(T degrees) { return (degrees * std::numbers::pi_v<T>)/ static_cast<T>(180); }
-
-   template <typename T>
-   T radiansFromRatio(T x, T y) { return static_cast<T> (std::atan2(y, x)); };
-
-   // NOTE: Next function was void linmath_vec4_set(...)
-   template <typename T, std::size_t N>
-   void vecSet(T(&v)[N], const T& value) {
-      int i;
-      for (i = 0; i < N; i++) {
-         v[i] = value;
-      }
-   }
-
    template <typename T, std::size_t N>
    std::string printVec(const T(&v)[N])
    {
@@ -89,7 +72,34 @@ namespace bolt::vector_math
       return ss.str();
    }
 
+   //// ostream operators
+   inline std::ostream& operator<<(std::ostream& os, const buf::Vec4& vec)
+   {
+      os << printVec((const buf::Vec4fArray&)vec);
+      return os;
+   };
 
-}  // End namespace bolt::vector_math
+   inline std::ostream& operator<<(std::ostream& os, const buf::Vec3& vec)
+   {
+      os << printVec((const buf::Vec3fArray&)vec);
+      return os;
+   };
+
+   inline std::ostream& operator<<(std::ostream& os, const buf::Vec2& vec)
+   {
+      os << printVec((const buf::Vec2fArray&)vec);
+      return os;
+   };
+
+   inline std::ostream& operator<<(std::ostream& os, const buf::Mat4& mat)
+   {
+      os << printMatrix((const buf::Mat4x4fArray&)mat); return os;
+   };
+
+   inline std::string printMatrixAsLines (const buf::Mat4& mat)
+   {
+      return printMatrixAsLines ((const buf::Mat4x4fArray&)mat);
+   }
+}
 
 
