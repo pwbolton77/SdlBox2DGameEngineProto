@@ -56,6 +56,8 @@ namespace buf
 {
    using namespace glm; // Bring all of glm into buf.  Note: Maybe not the best practice but it is convenient to just use buf::translate(...) etc.
 
+   enum CoordinateName { X = 0, Y, Z, W };   // Allows the following syntax for arrays like classes:  "auto y = vec[Y];"
+
    using Vec2 = glm::vec2;
    using Vec3 = glm::vec3;
    using Vec4 = glm::vec4;
