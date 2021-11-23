@@ -30,8 +30,8 @@ int main(int argc, char* args[])
    int error_code{ 0 }; // Return a non-zero error code from main() to indicate an error
 
    //// Configure the engine
-   using SceenMode = Eng::ScreenMode;
-   auto startup_result = Eng::configureEngine(SceenMode::FullScreen);
+   auto screen_mode = Eng::ScreenMode::NonFullScreen;
+   auto startup_result = Eng::configureEngine(screen_mode);
 
    //// If config went okay
    if (startup_result)

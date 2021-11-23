@@ -47,9 +47,10 @@ static const float PixelsToMeters = 1.0f / MetersToPixels;	// Pixels to meters
 
 namespace bolt::game_engine
 {
+   using namespace buf;
+   Engine::ScreenMode Engine::screen_mode = Engine::ScreenMode::None;
    float Engine::screen_width = 1280;
    float Engine::screen_height = 1024;
-   using namespace buf;
 
    ContactListener Engine::contact_listener{};   // #1 Only need ONE instance of the contact listener to receive all collision callbacks
    b2World* Engine::world{nullptr};                     // The Box2D world of objects
@@ -64,18 +65,33 @@ namespace bolt::game_engine
    // const int Engine::DynamicType = 1;    // or dynamic boxes
 
       // Purpose: Configure the graphics 
-   Result<void> Engine::configureGraphics(ScreenMode screen_mode)
+   Result<void> Engine::configureGraphics(ScreenMode _screen_mode)
    {
       Result<void> result; // Defaults to successful result
 
+      assert(_screen_mode != ScreenMode::None);
+      screen_mode = _screen_mode;
+
       int dummy_command_lines_args = 0;
       glutInit(&dummy_command_lines_args, nullptr); // Init with no arguments: *OR* you can pass in command line arguments via "glutInit(&argc, args);"
-      glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH); //set the display to Double buffer, with depth
 
-      //// Setup for full screen mode
-      // glutGameModeString("1024x768:32@75"); <--- This was the example for the settings for full screen mode
-      glutGameModeString("1280x1024"); // A compatible settings for full screen mode for many monitors
-      glutEnterGameMode(); // set glut to full screen using the settings in the line above
+      // Using glut to init window:  https://stackoverflow.com/questions/15891856/full-screen-in-opengl/15893255
+      // glutGameModeString("1024x768:32@75"); <--- From some other example
+      glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA); // enabling double buffering and RGBA
+
+      if (screen_mode == ScreenMode::FullScreen)
+      {
+         // glutGameModeString("1024x768:32@75"); <--- From some other example
+         auto resolution_str = std::format("{}x{}", screen_width, screen_height);
+         dbgln(resolution_str);
+         glutGameModeString(resolution_str.c_str());
+         glutEnterGameMode(); // set glut to full screen using the settings in the line above
+      }
+      else
+      {
+         glutInitWindowSize((int) screen_width, (int) screen_height);
+         glutCreateWindow("Bolt Game Engine"); // creating the window
+      }
 
       //// Initialize Modelview Matrix
       glMatrixMode(GL_MODELVIEW);
@@ -122,10 +138,10 @@ namespace bolt::game_engine
    }
 
    // Purpose: Configure the engine before starting it
-   Result<void> Engine::configureEngine(ScreenMode screen_mode)
+   Result<void> Engine::configureEngine(ScreenMode _screen_mode)
    {
       // Configure the graphics.  If there is an err, return the (error) result
-      if (config_result = configureGraphics(screen_mode); !config_result)
+      if (config_result = configureGraphics(_screen_mode); !config_result)
          return config_result;
 
       // Initialize the Box2D world and create/place the static objects.

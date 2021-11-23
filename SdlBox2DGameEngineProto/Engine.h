@@ -11,10 +11,10 @@ namespace bolt::game_engine
    class Engine
    {
    public:
-      enum class ScreenMode { FullScreen, NonFullScreen };
+      enum class ScreenMode { None, FullScreen, NonFullScreen };
 
       // Configure the engine before starting it
-      static buf::Result<void> configureEngine(ScreenMode screen_mode = ScreenMode::FullScreen);
+      static buf::Result<void> configureEngine(ScreenMode screen_mode = ScreenMode::NonFullScreen);
       // Start running the game engine 
       static buf::Result<void> runEngine();
       // Get the result of configuration
@@ -25,8 +25,7 @@ namespace bolt::game_engine
          { return {x_screen, static_cast<float>(screen_height) - y_screen}; };
 
    private:
-      // static std::uint16_t screen_width;
-      // static std::uint16_t screen_height;
+      static ScreenMode screen_mode;  // Full screen mode or not
       static float screen_width;
       static float screen_height;
       // Configure the graphics 
