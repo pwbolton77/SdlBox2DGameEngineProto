@@ -12,6 +12,8 @@
 
 #include "Engine.h"
 
+#include <format>
+
 #include "bolt_util_debug_macros.h" // Should be last include and ONLY in *.cpp files
 
 // #1 The tutorial used void pointers to "user data" with user data being int's.  So we need a couple ints to point to, where
@@ -36,7 +38,13 @@ int main(int argc, char* args[])
    //// If config went okay
    if (startup_result)
    {
+      std::cout << std::endl;
+      const auto& [x_min, y_min, x_max, y_max] = Eng::getWorldDisplayedInMeters();
+      std::cout << "World display (meters): " << std::format("bottom left: [{}, {}]  top-right [{}, {}]", x_min, y_min, x_max, y_max) << std::endl;
+
       // Provide some instructions to the player 
+      std::cout << std::endl;
+
       std::cout << std::endl;
       std::cout << "Instructions:" << std::endl;
       std::cout << " - Click mouse in window to create a block that falls." << std::endl;

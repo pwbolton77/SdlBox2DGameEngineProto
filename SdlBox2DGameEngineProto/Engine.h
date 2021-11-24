@@ -3,6 +3,7 @@
 
 #include "bolt_buf.h"
 #include "ContactListener.h"
+#include <tuple>
 
 #include <Box2D/Box2D.h>
 
@@ -19,18 +20,36 @@ namespace bolt::game_engine
       static buf::Result<void> runEngine();
       // Get the result of configuration
       static buf::Result<void> getConfigureResult() { return config_result; };
-
-      // Convert screen coordinates to world coordinates
-      static std::pair<float, float> screenToWorld(const float& x_screen, const float& y_screen) 
-         { return {x_screen, static_cast<float>(screen_height) - y_screen}; };
+      // Return the upper and lower world coordinates being displayed on screen in meters.  <x_min, y_min, x_max, y_max>
+      static std::tuple<float, float, float, float> getWorldDisplayedInMeters() { return { 0.0f, 0.0f, x_max, y_max }; };
 
    private:
-      static ScreenMode screen_mode;  // Full screen mode or not
-      static float screen_width;
-      static float screen_height;
+      static ScreenMode screen_mode;   // Full screen mode or not
+
+      static constexpr int ScreenFramesPerSecond = 60;
+
+      static constexpr float pixels_per_meter = 100.0f;	                  // Pixels per meter 
+      static constexpr float meters_per_pixel = 1.0f / pixels_per_meter;		// Meters per pixel
+
+      static constexpr std::int16_t screen_width = 1280;    // In pixels
+      static constexpr std::int16_t screen_height = 1024;    // In pixels
+
+      static constexpr float x_max = static_cast<float>(screen_width) * meters_per_pixel;
+      static constexpr float y_max = static_cast<float>(screen_height) * meters_per_pixel;
+
+      // Return number of meters in physicals world, given pixels
+      static float pixelsToMeters(std::int16_t pixels) { return meters_per_pixel * pixels; }
+
+      // Convert screen coordinates (top-left) to world coordinates (bottom-left and scaled).
+      static float screenToWorldScaledX(std::int16_t x_screen) { return pixelsToMeters(x_screen); }
+      static float screenToWorldScaledY(std::int16_t y_screen) { return pixelsToMeters(screen_height - y_screen); };
+      static std::pair<float, float> screenToWorldScaled(std::int16_t x_screen, std::int16_t y_screen) { return { screenToWorldScaledX(x_screen), screenToWorldScaledY(y_screen) }; };
+
+      // Unscaled - Convert screen coordinates (top-left) to world coordinates (bottom-left and NON-scaled).
+      static std::pair<std::int16_t, std::int16_t> screenToWorldUnscaled(std::int16_t  x_screen, std::int16_t y_screen) { return { x_screen, screen_height - y_screen }; };
+
       // Configure the graphics 
       static buf::Result<void> configureGraphics(ScreenMode screen_mode);
-
       // Add a new rectangle to the (Box2D) world of object.
       static b2Body* addRectToWorld(float x, float y, float width, float height, bool dynamic_object);
       // Draw a square. Assumes 4 vertex points using OpenGl

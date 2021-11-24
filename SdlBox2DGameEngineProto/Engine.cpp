@@ -1,4 +1,3 @@
-
 // Site References ...
 // My custom install process for libraries: https://github.com/pwbolton77/SdlBox2DInstallInstructions
 // Box2D Core Concepts: https://box2d.org/documentation/
@@ -7,6 +6,12 @@
 // Collision callback tutorial: https://www.youtube.com/watch?v=34suqmxL-ts&ab_channel=thecplusplusguy
 // Complex shapes tutorial (for next iteration): https://www.youtube.com/watch?v=V95dzuDw0Jg&ab_channel=TheCodingTrain
 // Making Box2D Circles (for some other iteration): https://stackoverflow.com/questions/10264012/how-to-create-circles-in-box2d
+//
+//
+// Debugging: To print out the model view matrix
+//    GLfloat model_view_matrix[16];
+//    glGetFloatv(GL_MODELVIEW_MATRIX, model_view_matrix);
+//    std::cout << "model: " << printMatrixAsLines(model_view_matrix) << std::endl;
 
 #include "ContactListener.h"  // #1 We need custom class for collision callbacks
 #include "bolt_buf.h"
@@ -37,23 +42,14 @@ using namespace std::string_literals;
 
 #undef TEST_GET_MODEL_VIEW_MATRIX // Define this to test and print model view matrix after some simple manipulation 
 
-// const int screen_width = 640;
-// const int screen_height = 480;
-
-static const int SCREEN_FRAMES_PER_SECOND = 60;
-static const float MetersToPixels = 40.0f;		// Meters to pixels
-static const float PixelsToMeters = 1.0f / MetersToPixels;	// Pixels to meters 
-
 
 namespace bolt::game_engine
 {
    using namespace buf;
    Engine::ScreenMode Engine::screen_mode = Engine::ScreenMode::None;
-   float Engine::screen_width = 1280;
-   float Engine::screen_height = 1024;
 
    ContactListener Engine::contact_listener{};   // #1 Only need ONE instance of the contact listener to receive all collision callbacks
-   b2World* Engine::world{nullptr};                     // The Box2D world of objects
+   b2World* Engine::world{ nullptr };                     // The Box2D world of objects
 
    // Record the results of a configuration attempt. Contains an error string if not configured 
    Result<void> Engine::config_result{ buf::unexpected("There was no attempt to configure the engine."s) };
@@ -83,13 +79,12 @@ namespace bolt::game_engine
       {
          // glutGameModeString("1024x768:32@75"); <--- From some other example
          auto resolution_str = std::format("{}x{}", screen_width, screen_height);
-         dbgln(resolution_str);
          glutGameModeString(resolution_str.c_str());
          glutEnterGameMode(); // set glut to full screen using the settings in the line above
       }
       else
       {
-         glutInitWindowSize((int) screen_width, (int) screen_height);
+         glutInitWindowSize((int)screen_width, (int)screen_height);
          glutCreateWindow("Bolt Game Engine"); // creating the window
       }
 
@@ -130,10 +125,6 @@ namespace bolt::game_engine
          result = buf::unexpected{ std::format("Error initializing OpenGL! {}\n", (const char*)gluErrorString(error)) };
       }
 
-#ifdef TEST_GET_MODEL_VIEW_MATRIX
-      testGetModelViewMatrix();  // Test and print model view matrix after some simple manipulation 
-#endif
-
       return result;
    }
 
@@ -157,7 +148,7 @@ namespace bolt::game_engine
 
       // Setup a timer (in milliseconds), then call the runMainLoop() function. 
       //  - val is just a user provided value so the user can (potentially) identify the reason a timer when off
-      glutTimerFunc(1000 / SCREEN_FRAMES_PER_SECOND, runMainLoop, 0 /*val*/);
+      glutTimerFunc(1000 / ScreenFramesPerSecond, runMainLoop, 0 /*val*/);
 
       // Run the world.
       glutMainLoop(); //Start GLUT main loop
@@ -172,16 +163,16 @@ namespace bolt::game_engine
    //   dynamic_object: 
    //       - if true the object bounce around in the physical world.  
    //       - If false the object is "static" and acts like a rigid, fixed platform (that probably never moves in the scene).
-   b2Body* Engine::addRectToWorld(float x_center, float y_center, float width, float height, bool dynamic_object = true)
+   b2Body* Engine::addRectToWorld(float x_center_world, float y_center_world, float width, float height, bool dynamic_object = true)
    {
       b2BodyDef bodydef;
-      bodydef.position.Set(x_center * PixelsToMeters, y_center * PixelsToMeters);
+      bodydef.position.Set(x_center_world, y_center_world);
       bodydef.type = (dynamic_object) ? b2_dynamicBody : b2_staticBody;
 
       b2Body* body = world->CreateBody(&bodydef);
 
       b2PolygonShape shape;   // Polygons seem to be limited to vertices 
-      shape.SetAsBox(PixelsToMeters * width / 2, PixelsToMeters * height / 2);
+      shape.SetAsBox(width / 2, height / 2);
 
       b2FixtureDef fixture_def;
       fixture_def.shape = &shape;   // Note: "shape" is specifically documented to state that it will be cloned, so can be on stack.
@@ -206,11 +197,11 @@ namespace bolt::game_engine
    {
       glColor3f(1.0, 1.0f, 1.0f);
       glPushMatrix();
-      glTranslatef(center.x * MetersToPixels, center.y * MetersToPixels, 0.0f);
+      glTranslatef(center.x, center.y, 0.0f);
       glRotatef(angle * 180.0f / (float)M_PI, 0.0f, 0.0f, 1.0f);
       glBegin(GL_QUADS);
       for (int i = 0; i < 4; ++i)
-         glVertex2f(points[i].x * MetersToPixels, points[i].y * MetersToPixels);
+         glVertex2f(points[i].x, points[i].y);
 
       glEnd();
       glPopMatrix();
@@ -244,12 +235,14 @@ namespace bolt::game_engine
    void Engine::initBox2DWorld()
    {
       // world = new b2World(b2Vec2(0.0f, 0.0f)); // 0, 0 to removed all gravity: Was (0.0f, 9.81f) for gravity
-      world = new b2World(b2Vec2(0.0f, -9.8f)); // Removed all gravity: Was (0.0f, 9.81f) for gravity
+      world = new b2World(b2Vec2(0.0f, -9.8f));
 
       world->SetContactListener(&contact_listener);
 
       // Add a static platform where boxes will land and stop.
-      addRectToWorld(screen_width / 2, 50, screen_width, 30, false /*not dynamic, so static*/);
+      const auto& [world_x, world_y] = screenToWorldScaled(screen_width / 2, 50);
+
+      addRectToWorld(x_max / 2.0f, 0.8f, 10.0f, 0.4f, false /*not dynamic, so static*/);
    }
 
    // Purpose: Sets up an orthographic view.  
@@ -260,7 +253,7 @@ namespace bolt::game_engine
 
       glLoadIdentity();
 
-      glOrtho(0.0, screen_width, 0.0, screen_height, 1.0, -1.0);
+      glOrtho(0.0, x_max, 0.0, y_max, 1.0, -1.0);
 
       glMatrixMode(GL_MODELVIEW); //set the matrix back to model
    }
@@ -268,7 +261,7 @@ namespace bolt::game_engine
    // Purpose: Update the position of objects/bodies in the world
    void Engine::update()
    {
-      world->Step(1.0f / SCREEN_FRAMES_PER_SECOND /*amount of time that passed*/,
+      world->Step(1.0f / ScreenFramesPerSecond /*amount of time that passed*/,
          5 /*magic number*/, 5 /*magic number*/);  // I guess these numbers affect accuracy and overhead of collision detection and position calculations.
    }
 
@@ -281,7 +274,7 @@ namespace bolt::game_engine
 
       // Setup a timer (in milliseconds), then call the runMainLoop() function again. 
       //  val - is just a user provided value so the user can (potentially) identify the reason a timer when off
-      glutTimerFunc(1000 / SCREEN_FRAMES_PER_SECOND, runMainLoop, val); //Run frame one more time
+      glutTimerFunc(1000 / ScreenFramesPerSecond, runMainLoop, val); //Run frame one more time
    }
 
    // Purpose: Callback when a mouse event occurs (assuming it was registered with glutMouseFunc())
@@ -289,8 +282,8 @@ namespace bolt::game_engine
    {
       if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
       {
-         auto [world_mouse_x, world_mouse_y] = screenToWorld((float) screen_x, (float) screen_y);
-         addRectToWorld(world_mouse_x, world_mouse_y, 20 /*rectangle width*/, 20 /*rectangle height*/, true);
+         const auto& [world_x, world_y] = screenToWorldScaled(screen_x, screen_y);
+         addRectToWorld(world_x, world_y, 0.4f, 0.4f, true /*not dynamic, so static*/);
       }
 
       // Other callbacks include
@@ -305,7 +298,7 @@ namespace bolt::game_engine
    void Engine::keyboardEventCallback(unsigned char key, int where_mouse_is_x, int where_mouse_is_y)
    {
       dbg(__func__); dbg(where_mouse_is_x); dbg(where_mouse_is_y); dbgln(key);   // Debug: Just print out the key
-      auto [world_mouse_x, world_mouse_y] = screenToWorld((float) where_mouse_is_x, (float) where_mouse_is_y);
+      const auto& [world_mouse_x, world_mouse_y] = screenToWorldUnscaled(where_mouse_is_x, where_mouse_is_y);
       dbg(__func__); dbg(world_mouse_x); dbg(world_mouse_y); dbgln(key);   // Debug: Just print out the key
 
       if (key == 27)
