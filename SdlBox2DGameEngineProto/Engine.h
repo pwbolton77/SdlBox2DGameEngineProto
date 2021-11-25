@@ -1,5 +1,9 @@
 #pragma once
-// Purpose: The 2D game engine.  NOTE: All static function/data members (need to deal with Glut/OpenGL framework and callbacks)! 
+// Purpose: The 2D game engine.  
+//    pwb 11/25/2021
+//    NOTE: This class consists of only static functions because (OpenGL) Glut libraries/framework 
+//          does not support callbacks to objects (callbacks must be registered as static member or free functions).
+//
 
 #include "bolt_buf.h"
 #include "ContactListener.h"
@@ -20,33 +24,43 @@ namespace bolt::game_engine
       static buf::Result<void> runEngine();
       // Get the result of configuration
       static buf::Result<void> getConfigureResult() { return config_result; };
-      // Return the upper and lower world coordinates being displayed on screen in meters.  <x_min, y_min, x_max, y_max>
-      static std::tuple<float, float, float, float> getWorldDisplayedInMeters() { return { 0.0f, 0.0f, x_max, y_max }; };
+      // Return the nominal upper and lower world coordinates displayed on screen in meters. The term 
+      // nominal means the (default) display area for which the engine was 
+      // designed to show the player. This may vary from what is actually being displayed. Returned as <x_min, y_min, x_max, y_max>
+      static std::tuple<float, float, float, float> getWorldDisplayedInMetersNominal() { return { 0.0f, 0.0f, x_world_display_max_nominal, y_world_display_max_nominal }; };
 
    private:
       static ScreenMode screen_mode;   // Full screen mode or not
 
       static constexpr int ScreenFramesPerSecond = 60;
 
-      static constexpr float pixels_per_meter = 100.0f;	                  // Pixels per meter 
-      static constexpr float meters_per_pixel = 1.0f / pixels_per_meter;		// Meters per pixel
+      static constexpr float pixels_per_meter_nominal = 100.0f;	                  // Pixels per meter 
+      static constexpr float meters_per_pixel_nominal = 1.0f / pixels_per_meter_nominal;   // Meters per pixel
 
-      static constexpr std::int16_t screen_width = 1280;    // In pixels
-      static constexpr std::int16_t screen_height = 1024;    // In pixels
+      static constexpr std::int16_t screen_width_default = 1280;    // In pixels
+      static constexpr std::int16_t screen_height_default = 1024;    // In pixels
 
-      static constexpr float x_max = static_cast<float>(screen_width) * meters_per_pixel;
-      static constexpr float y_max = static_cast<float>(screen_height) * meters_per_pixel;
+      static std::int16_t window_width;   // Current window in pixels
+      static std::int16_t window_height;  // Current window in pixels
+
+      static constexpr float x_world_display_max_nominal = meters_per_pixel_nominal * screen_width_default;
+      static constexpr float y_world_display_max_nominal = meters_per_pixel_nominal * screen_height_default;
+
+      // Show less of the world as the window gets smaller ...
+      static float x_world_display_max;
+      static float y_world_display_max;
 
       // Return number of meters in physicals world, given pixels
-      static float pixelsToMeters(std::int16_t pixels) { return meters_per_pixel * pixels; }
+      static float pixelsToMetersNominal(std::int16_t pixels) { return meters_per_pixel_nominal * pixels; }
 
       // Convert screen coordinates (top-left) to world coordinates (bottom-left and scaled).
-      static float screenToWorldScaledX(std::int16_t x_screen) { return pixelsToMeters(x_screen); }
-      static float screenToWorldScaledY(std::int16_t y_screen) { return pixelsToMeters(screen_height - y_screen); };
+      static float screenToWorldScaledX(std::int16_t x_screen) { return pixelsToMetersNominal(x_screen); }
+      static float screenToWorldScaledY(std::int16_t y_screen) { return pixelsToMetersNominal(window_height - y_screen); };
+
       static std::pair<float, float> screenToWorldScaled(std::int16_t x_screen, std::int16_t y_screen) { return { screenToWorldScaledX(x_screen), screenToWorldScaledY(y_screen) }; };
 
       // Unscaled - Convert screen coordinates (top-left) to world coordinates (bottom-left and NON-scaled).
-      static std::pair<std::int16_t, std::int16_t> screenToWorldUnscaled(std::int16_t  x_screen, std::int16_t y_screen) { return { x_screen, screen_height - y_screen }; };
+      static std::pair<std::int16_t, std::int16_t> screenToWorldUnscaled(std::int16_t  x_screen, std::int16_t y_screen) { return { x_screen, window_height - y_screen }; };
 
       // Configure the graphics 
       static buf::Result<void> configureGraphics(ScreenMode screen_mode);

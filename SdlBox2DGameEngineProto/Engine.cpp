@@ -48,6 +48,13 @@ namespace bolt::game_engine
    using namespace buf;
    Engine::ScreenMode Engine::screen_mode = Engine::ScreenMode::None;
 
+   std::int16_t Engine::window_width = screen_width_default;    // Current window in pixels
+   std::int16_t Engine::window_height = screen_height_default;  // Current window in pixels
+
+   // Show less of the world as the window gets smaller ...
+   float Engine::x_world_display_max = (x_world_display_max_nominal * window_width) / screen_width_default;
+   float Engine::y_world_display_max = (y_world_display_max_nominal * window_height) / screen_height_default;
+
    ContactListener Engine::contact_listener{};   // #1 Only need ONE instance of the contact listener to receive all collision callbacks
    b2World* Engine::world{ nullptr };                     // The Box2D world of objects
 
@@ -78,13 +85,13 @@ namespace bolt::game_engine
       if (screen_mode == ScreenMode::FullScreen)
       {
          // glutGameModeString("1024x768:32@75"); <--- From some other example
-         auto resolution_str = std::format("{}x{}", screen_width, screen_height);
+         auto resolution_str = std::format("{}x{}", screen_width_default, screen_height_default);
          glutGameModeString(resolution_str.c_str());
          glutEnterGameMode(); // set glut to full screen using the settings in the line above
       }
       else
       {
-         glutInitWindowSize((int)screen_width, (int)screen_height);
+         glutInitWindowSize((int)screen_width_default, (int)screen_height_default);
          glutCreateWindow("Bolt Game Engine"); // creating the window
       }
 
@@ -240,20 +247,30 @@ namespace bolt::game_engine
       world->SetContactListener(&contact_listener);
 
       // Add a static platform where boxes will land and stop.
-      const auto& [world_x, world_y] = screenToWorldScaled(screen_width / 2, 50);
+      const auto& [world_x, world_y] = screenToWorldScaled(screen_width_default / 2, 50);
 
-      addRectToWorld(x_max / 2.0f, 0.8f, 10.0f, 0.4f, false /*not dynamic, so static*/);
+      addRectToWorld(x_world_display_max_nominal / 2.0f, 0.8f, 10.0f, 0.4f, false /*not dynamic, so static*/);
    }
 
    // Purpose: Sets up an orthographic view.  
    //    Note: Needs to be installed as a glutReshapeFunc() callback to support Window's window management
-   void Engine::reshapeOrtho(int w, int h) {
-      glViewport(0, 0, (GLsizei)w, (GLsizei)h); //set the viewport to the current window specifications
+   void Engine::reshapeOrtho(int win_width, int win_height) 
+   {
+      dbgfuncln(win_width);
+      dbgfuncln(win_height);
+      window_width = win_width;
+      window_height = win_height;
+      glViewport(0, 0, (GLsizei)win_width, (GLsizei)win_height); //set the viewport to the current window specifications
       glMatrixMode(GL_PROJECTION); //set the matrix to projection
 
       glLoadIdentity();
 
-      glOrtho(0.0, x_max, 0.0, y_max, 1.0, -1.0);
+      // Show less of the world as the window gets smaller ...
+      x_world_display_max = (x_world_display_max_nominal * window_width) / screen_width_default;
+      y_world_display_max = (y_world_display_max_nominal * window_height) / screen_height_default;
+
+      // glOrtho(0.0, x_world_display_max_nominal, 0.0, y_world_display_max_nominal, 1.0, -1.0);
+      glOrtho(0.0, x_world_display_max, 0.0, y_world_display_max, 1.0, -1.0);
 
       glMatrixMode(GL_MODELVIEW); //set the matrix back to model
    }
@@ -297,9 +314,15 @@ namespace bolt::game_engine
    // Purpose: Callback when a key is pressed
    void Engine::keyboardEventCallback(unsigned char key, int where_mouse_is_x, int where_mouse_is_y)
    {
+#ifdef PRINT_WHERE_MOUSE_IS
       dbg(__func__); dbg(where_mouse_is_x); dbg(where_mouse_is_y); dbgln(key);   // Debug: Just print out the key
-      const auto& [world_mouse_x, world_mouse_y] = screenToWorldUnscaled(where_mouse_is_x, where_mouse_is_y);
+
+      const auto& [world_mouse_x, world_mouse_y] = screenToWorldScaled(where_mouse_is_x, where_mouse_is_y);
       dbg(__func__); dbg(world_mouse_x); dbg(world_mouse_y); dbgln(key);   // Debug: Just print out the key
+
+      const auto& [mouse_x_from_bot_left, mouse_y_from_bot_left] = screenToWorldUnscaled(where_mouse_is_x, where_mouse_is_y);
+      dbg(__func__); dbg(mouse_x_from_bot_left); dbg(mouse_y_from_bot_left); dbgln(key);   // Debug: Just print out the key
+#endif
 
       if (key == 27)
       {

@@ -39,8 +39,8 @@ int main(int argc, char* args[])
    if (startup_result)
    {
       std::cout << std::endl;
-      const auto& [x_min, y_min, x_max, y_max] = Eng::getWorldDisplayedInMeters();
-      std::cout << "World display (meters): " << std::format("bottom left: [{}, {}]  top-right [{}, {}]", x_min, y_min, x_max, y_max) << std::endl;
+      const auto& [x_min, y_min, x_max, y_max] = Eng::getWorldDisplayedInMetersNominal();
+      std::cout << "World display nominal (meters): " << std::format("bottom left: [{}, {}]  top-right [{}, {}]", x_min, y_min, x_max, y_max) << std::endl;
 
       // Provide some instructions to the player 
       std::cout << std::endl;
