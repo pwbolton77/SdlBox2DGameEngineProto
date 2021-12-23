@@ -8,6 +8,7 @@
 #include "bolt_buf.h"
 #include "ContactListener.h"
 #include <tuple>
+#include <span>
 
 #include <Box2D/Box2D.h>
 
@@ -25,8 +26,8 @@ namespace bolt::game_engine
       // Get the result of configuration
       static buf::Result<void> getConfigureResult() { return config_result; };
       // Return the nominal upper and lower world coordinates displayed on screen in meters. The term 
-      // nominal means the (default) display area for which the engine was 
-      // designed to show the player. This may vary from what is actually being displayed. Returned as <x_min, y_min, x_max, y_max>
+      // nominal means the (default) display area for which the engine was designed to show the player. This 
+      // may vary from what is actually being displayed. Returned as <x_min, y_min, x_max, y_max>
       static std::tuple<float, float, float, float> getWorldDisplayedInMetersNominal() { return { 0.0f, 0.0f, x_world_display_max_nominal, y_world_display_max_nominal }; };
 
    private:
@@ -64,8 +65,13 @@ namespace bolt::game_engine
 
       // Configure the graphics 
       static buf::Result<void> configureGraphics(ScreenMode screen_mode);
+
+      // Add a new polygon to the (Box2D) world of object.
+      static b2Body* addPolyToWorld(float x_center_world, float y_center_world, const std::vector<buf::Vec2>& verts, bool dynamic_object);
       // Add a new rectangle to the (Box2D) world of object.
       static b2Body* addRectToWorld(float x, float y, float width, float height, bool dynamic_object);
+      // Draw a polygon
+      static void drawPoly(const std::span<buf::Vec2>& points, b2Vec2 center, float angle);
       // Draw a square. Assumes 4 vertex points using OpenGl
       static void drawSquare(b2Vec2* points, b2Vec2 center, float angle);
       // Render the graphics to hidden display buffer, and then swap buffers to show the new display

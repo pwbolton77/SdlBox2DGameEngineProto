@@ -7,7 +7,7 @@
 #include <sstream>
 #include <cassert>
 
-// Namespace for buf (Bolt Utilities Functionality)
+// buf: Namespace for Bolton Utility Functions
 namespace buf::matrix_print
 {
    template <typename T, std::size_t N>

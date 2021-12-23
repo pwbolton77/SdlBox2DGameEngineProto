@@ -1,5 +1,7 @@
 #pragma once
 
+// buf: Namespace for Bolton Utility Functions
+
 //// GLU Matrix and Vector lib
 // Manual: http://glm.g-truc.net/0.9.5/glm-0.9.5.pdf
 // http://glm.g-truc.net/0.9.5/code.html
@@ -46,12 +48,15 @@
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp> // glm::value_ptrvoid 
 
+#include <Box2D/Box2D.h>
+
 #include <string>
 #include <ostream>
 #include <sstream>
 #include <cassert>
+#include <span>
 
-// Namespace for buf (Bolt Utilities Functionality)
+// buf: Namespace for Bolton Utility Functions
 namespace buf
 {
    using namespace glm; // Bring all of glm into buf.  Note: Maybe not the best practice but it is convenient to just use buf::translate(...) etc.
@@ -67,11 +72,26 @@ namespace buf
    using Mat4 = glm::mat4;
 
    // Infrequently used for casting ... 
-   using Vec2fArray = float[2];  // infrequently used for casting
-   using Vec3fArray = float[3];  // infrequently used for casting
-   using Vec4fArray = float[4];  // infrequently used for casting
+   using Vec2fArray = float[2];  // Infrequently used for casting
+   using Vec3fArray = float[3];  // Infrequently used for casting
+   using Vec4fArray = float[4];  // Infrequently used for casting
 
    using Mat4x4fArray = float[16];  // infrequently used for casting
+
+   //// Do some checks to make sure that Box2d's b2Vec2 can be directly cast (using reinterpret_cast<>) to buf::Vec2 (i.e. they both 
+   // contain just 2 floats for x and y)
+   static_assert (sizeof (b2Vec2) == sizeof (float) * 2);
+   static_assert (sizeof (buf::Vec2) == sizeof (float) * 2);
+
+   //// Convert Vec2 types to b2Vec2 types
+   inline const b2Vec2* cvert(const buf::Vec2* vec2_ptr) { return reinterpret_cast<const b2Vec2 *> (vec2_ptr); }
+   inline b2Vec2* cvert(buf::Vec2* vec2_ptr) { return reinterpret_cast<b2Vec2 *> (vec2_ptr); }
+
+   inline b2Vec2& cvert(buf::Vec2& vec2_ref) { return reinterpret_cast<b2Vec2 &> (vec2_ref); }
+   inline const b2Vec2& cvert(const buf::Vec2& vec2_ref) { return reinterpret_cast<const b2Vec2 &> (vec2_ref); }
+
+   // Make a span (i.e. a non-memory-owning container) of points given a pointer to a b2Vec2 and a count (as per Box2D data formats)
+   inline std::span<buf::Vec2> makeVec2Span(b2Vec2* points, int32 count) { return { reinterpret_cast<buf::Vec2 *> (points) , static_cast<size_t> (count)}; };
 }
 
 

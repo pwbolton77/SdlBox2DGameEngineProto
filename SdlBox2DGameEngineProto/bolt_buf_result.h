@@ -2,7 +2,7 @@
 
 #include "expected.h"
 
-// Namespace for buf (Bolt Utilities Functionality)
+// buf: Namespace for Bolton Utility Functions
 namespace buf
 {
    // Bring the following into the buf namespace

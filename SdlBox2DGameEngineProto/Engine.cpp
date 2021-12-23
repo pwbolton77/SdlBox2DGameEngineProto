@@ -35,13 +35,13 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "bolt_util_debug_macros.h" // Should be last include and ONLY in *.cpp files
 
 using namespace std::string_literals;
 
 #undef TEST_GET_MODEL_VIEW_MATRIX // Define this to test and print model view matrix after some simple manipulation 
-
 
 namespace bolt::game_engine
 {
@@ -166,11 +166,47 @@ namespace bolt::game_engine
       return result;
    }
 
+   // Purpose: Add a new polygon to the (Box2D) world of object.
+   //       - if true the object bounce around in the physical world.  
+   //       - If false the object is "static" and acts like a rigid, fixed platform (that probably never moves in the scene).
+   b2Body* Engine::addPolyToWorld(float x_center_world, float y_center_world, const std::vector<buf::Vec2>& verts, bool dynamic_object)
+   {
+      // https://gamedev.stackexchange.com/questions/1496/using-the-box2d-polygon-set-function
+
+      b2BodyDef bodydef;
+      bodydef.position.Set(x_center_world, y_center_world);
+      bodydef.type = (dynamic_object) ? b2_dynamicBody : b2_staticBody;
+
+      b2Body* body = world->CreateBody(&bodydef);
+
+      b2PolygonShape shape;
+      assert(verts.size() <= 8); // Polygons are limited to 8 vertices 
+
+      shape.Set(cvert(&verts[0]), (int32)verts.size());
+
+      b2FixtureDef fixture_def;
+      fixture_def.shape = &shape;   // Note: "shape" is specifically documented to state that it will be cloned, so can be on stack.
+      fixture_def.density = 1.0;
+
+      body->CreateFixture(&fixture_def);
+
+      auto& user_data = body->GetUserData();
+      assert(sizeof(uintptr_t) == sizeof(&DynamicType)); // Make sure that we can save a pointer to an int in a uintptr_t type.
+
+      // #1 When a collision happens we need to know the type of the box/body, so save the type via a user data pointer
+      if (dynamic_object)
+         user_data.pointer = (uintptr_t)&DynamicType;
+      else
+         user_data.pointer = (uintptr_t)&StaticType;
+
+      return body;
+   }
+
    // Purpose: Add a new rectangle to the (Box2D) world of object.
    //   dynamic_object: 
    //       - if true the object bounce around in the physical world.  
    //       - If false the object is "static" and acts like a rigid, fixed platform (that probably never moves in the scene).
-   b2Body* Engine::addRectToWorld(float x_center_world, float y_center_world, float width, float height, bool dynamic_object = true)
+   b2Body* Engine::addRectToWorld(float x_center_world, float y_center_world, float width, float height, bool dynamic_object)
    {
       b2BodyDef bodydef;
       bodydef.position.Set(x_center_world, y_center_world);
@@ -178,7 +214,7 @@ namespace bolt::game_engine
 
       b2Body* body = world->CreateBody(&bodydef);
 
-      b2PolygonShape shape;   // Polygons seem to be limited to vertices 
+      b2PolygonShape shape;   // Polygons are limited to 8 vertices 
       shape.SetAsBox(width / 2, height / 2);
 
       b2FixtureDef fixture_def;
@@ -199,7 +235,7 @@ namespace bolt::game_engine
       return body;
    }
 
-   // Purpose: Draw a square. Assumes 4 vertex points using OpenGl
+   // Purpose: Draw a square. Assumes 4 vertex points using OpenGl   // @@@ Can probably remove this method
    void Engine::drawSquare(b2Vec2* points, b2Vec2 center, float angle)
    {
       glColor3f(1.0, 1.0f, 1.0f);
@@ -209,6 +245,23 @@ namespace bolt::game_engine
       glBegin(GL_QUADS);
       for (int i = 0; i < 4; ++i)
          glVertex2f(points[i].x, points[i].y);
+
+      glEnd();
+      glPopMatrix();
+   }
+
+   // Purpose: Draw a polygon
+   void Engine::drawPoly(const std::span<buf::Vec2>& points, b2Vec2 center, float angle)
+   {
+      glColor3f(1.0, 0.0f, 0.0f);
+      glPushMatrix();
+      glTranslatef(center.x, center.y, 0.0f);
+      glRotatef(angle * 180.0f / (float)M_PI, 0.0f, 0.0f, 1.0f);
+
+      glBegin(GL_POLYGON);
+
+      for (const auto& point : points)
+         glVertex2f(point.x, point.y);
 
       glEnd();
       glPopMatrix();
@@ -224,13 +277,12 @@ namespace bolt::game_engine
 
       while (body_node_ptr != nullptr)
       {
-         b2Vec2 points[4]; // Assumes a (4 vertex) rectangle!
+         auto shape_ptr = body_node_ptr->GetFixtureList()->GetShape();
+         auto poly_ptr = dynamic_cast<b2PolygonShape*>(shape_ptr);
+         assert(poly_ptr != nullptr);
 
-         // Get points assuming a rectangle 
-         for (int i = 0; i < 4; ++i)
-            points[i] = ((b2PolygonShape*)body_node_ptr->GetFixtureList()->GetShape())->m_vertices[i];
-
-         drawSquare(points, body_node_ptr->GetWorldCenter(), body_node_ptr->GetAngle());
+         auto span_points{ makeVec2Span(poly_ptr->m_vertices, poly_ptr->m_count) };
+         drawPoly(span_points, body_node_ptr->GetWorldCenter(), body_node_ptr->GetAngle());
 
          body_node_ptr = body_node_ptr->GetNext(); // Get the next body in the world
       }
@@ -254,7 +306,7 @@ namespace bolt::game_engine
 
    // Purpose: Sets up an orthographic view.  
    //    Note: Needs to be installed as a glutReshapeFunc() callback to support Window's window management
-   void Engine::reshapeOrtho(int win_width, int win_height) 
+   void Engine::reshapeOrtho(int win_width, int win_height)
    {
       dbgfuncln(win_width);
       dbgfuncln(win_height);
@@ -300,7 +352,16 @@ namespace bolt::game_engine
       if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
       {
          const auto& [world_x, world_y] = screenToWorldScaled(screen_x, screen_y);
-         addRectToWorld(world_x, world_y, 0.4f, 0.4f, true /*not dynamic, so static*/);
+
+         // Centroid calculator: https://eguruchela.com/math/calculator/polygon-centroid-point
+         const std::vector<buf::Vec2> standard_triangle
+         {
+            {-0.1333, -0.0667},
+            {0.0667,-0.0667},
+            {0.0667,0.1333},
+         };
+
+         addPolyToWorld(world_x, world_y, standard_triangle, true /*dynamic_object*/);
       }
 
       // Other callbacks include
