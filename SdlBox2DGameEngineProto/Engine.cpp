@@ -353,13 +353,20 @@ namespace bolt::game_engine
       {
          const auto& [world_x, world_y] = screenToWorldScaled(screen_x, screen_y);
 
+
          // Centroid calculator: https://eguruchela.com/math/calculator/polygon-centroid-point
          const std::vector<buf::Vec2> standard_triangle
          {
-            {-0.1333, -0.0667},
-            {0.0667,-0.0667},
-            {0.0667,0.1333},
+
+// #define BAD_TRIANGLE         
+#ifdef BAD_TRIANGLE
+            {-0.1333 + 0.5, -0.0667}, {0.0667 + 0.5,-0.0667}, {0.0667 + 0.5,0.1333},  // Bad because points not arranged around centroid
+#else
+            {-0.1333, -0.0667}, {0.0667,-0.0667}, {0.0667,0.1333},
+#endif
          };
+
+         // @@ TODO: JAB: Call function on (bad) triangle to orientToCentroid()
 
          addPolyToWorld(world_x, world_y, standard_triangle, true /*dynamic_object*/);
       }

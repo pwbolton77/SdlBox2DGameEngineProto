@@ -30,6 +30,9 @@
     <ClCompile Include="Engine.cpp">
       <Filter>Source Files\BoltEngine</Filter>
     </ClCompile>
+    <ClCompile Include="bolt_buf_matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">

@@ -42,6 +42,7 @@
 //   dbgln(transformed);
 //}
 
+#include <utility>
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4, glm::ivec4
 #include <glm/mat4x4.hpp> // glm::mat4
@@ -55,6 +56,7 @@
 #include <sstream>
 #include <cassert>
 #include <span>
+#include <vector>
 
 // buf: Namespace for Bolton Utility Functions
 namespace buf
@@ -83,15 +85,19 @@ namespace buf
    static_assert (sizeof (b2Vec2) == sizeof (float) * 2);
    static_assert (sizeof (buf::Vec2) == sizeof (float) * 2);
 
-   //// Convert Vec2 types to b2Vec2 types
+   //// Convert Vec2 types to (Box2D) b2Vec2 types
    inline const b2Vec2* cvert(const buf::Vec2* vec2_ptr) { return reinterpret_cast<const b2Vec2 *> (vec2_ptr); }
    inline b2Vec2* cvert(buf::Vec2* vec2_ptr) { return reinterpret_cast<b2Vec2 *> (vec2_ptr); }
-
    inline b2Vec2& cvert(buf::Vec2& vec2_ref) { return reinterpret_cast<b2Vec2 &> (vec2_ref); }
    inline const b2Vec2& cvert(const buf::Vec2& vec2_ref) { return reinterpret_cast<const b2Vec2 &> (vec2_ref); }
 
    // Make a span (i.e. a non-memory-owning container) of points given a pointer to a b2Vec2 and a count (as per Box2D data formats)
    inline std::span<buf::Vec2> makeVec2Span(b2Vec2* points, int32 count) { return { reinterpret_cast<buf::Vec2 *> (points) , static_cast<size_t> (count)}; };
+
+   // Calculate centroid from a set of (polygon) points 
+   buf::Vec2 calculateCentroid(const std::vector<buf::Vec2>& points);
+   // Calculate the centroid of the points and adjust the points to orient at the centroid.  Return the offset. 
+   buf::Vec2 orientToCentroid (std::vector<buf::Vec2>& points);
 }
 
 
